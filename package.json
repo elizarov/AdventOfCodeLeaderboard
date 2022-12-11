@@ -1,0 +1,19 @@
+{
+  "name": "AdventOfCodeLeaderBoard",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./src/download.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./src/download.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "TODO"
+  },
+  "author": "",
+  "license": "Apache 2.0",
+  "dependencies": {
+    "playwright": "^1.28"
+  }
+}
