@@ -4,8 +4,47 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import java.io.*
 
-val AOC_TZ = TimeZone.of("America/New_York")
+// ------------- Global parameters -------------
+
 const val AOC_YEAR = 2022
+const val JSON_FILES_MASK = "json/*.json"
+
+val AOC_TZ = TimeZone.of("America/New_York")
+
+// ------------- Configurable properties -------------
+
+val excludeIds = System.getProperty("excludeIds")
+    ?.split(",")?.toSet()
+    ?: emptySet()
+
+val daysRange = System.getProperty("daysRange")
+    ?.split("..")?.map { it.toInt() }?.let { it[0]..(it.getOrNull(1) ?: it[0]) }
+    ?: 1..25
+
+// ------------- Formatting -------------
+
+const val placeLen = 3
+const val scoreLen = 5
+const val nameLen = 20
+const val gapLen = 4
+
+// ------------- Retrieve scoreboard files -------------
+
+val filePrefix = JSON_FILES_MASK.substringAfterLast("/").substringBeforeLast("*")
+val fileSuffix = JSON_FILES_MASK.substringAfterLast("*")
+val filesDir = JSON_FILES_MASK.substringBeforeLast("/")
+val allScoreboardIds: List<String> = File(filesDir)
+    .listFiles { _, name -> name.endsWith(fileSuffix) && name.startsWith(filePrefix) }!!
+    .map { file ->
+        val name = file.name
+        name.substring(filePrefix.length, name.length - fileSuffix.length)
+    }
+
+val files = allScoreboardIds
+    .filter { it !in excludeIds }
+    .map { id -> File(JSON_FILES_MASK.replace("*", id)) }
+
+// ------------- Data classes -------------
 
 @Serializable
 data class Leaderboard(
@@ -42,15 +81,9 @@ data class Completion(
     var place = 0
 }
 
-const val placeLen = 3
-const val scoreLen = 5
-const val nameLen = 20
-const val gapLen = 4
-const val days = 25
-
-val files: List<File> = File("json").listFiles { _, name -> name.endsWith(".json") }!!.toList()
-
 data class MemberCompletion(val m: Member, val c: Completion)
+
+// ------------- Code -------------
 
 fun main() {
     // Collect all non-empty members from leaderboards
@@ -65,7 +98,7 @@ fun main() {
         member.localScore = 0
     }
     val best = HashMap<Int, HashMap<Int, Long>>()
-    for (d in 1..25) {
+    for (d in daysRange) {
         for (l in 1..2) {
             val order = members.values
                 .mapNotNull { m -> m.completion(d, l)?.let { MemberCompletion(m, it) } }
@@ -88,7 +121,7 @@ fun main() {
     // Output overall table
     fun header(title: String = "", dayBlock: (Int) -> Unit) {
         print(title.padStart(placeLen + scoreLen + nameLen + scoreLen + 4))
-        for (d in 1..days) dayBlock(d)
+        for (d in daysRange) dayBlock(d)
         println()
     }
     header("Day:") { d ->
@@ -128,7 +161,7 @@ fun main() {
         } else {
             print("[${m.globalScore.toString().padStart(scoreLen)}]")
         }
-        for (d in 1..25) {
+        for (d in daysRange) {
             for (l in 1..2) {
                 if (l == 2) print("/")
                 val c = m.completion(d, l)

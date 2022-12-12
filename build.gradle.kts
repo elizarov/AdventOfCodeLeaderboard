@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     kotlin("jvm") version "1.7.20"
     kotlin("plugin.serialization") version "1.7.20"
@@ -32,4 +30,9 @@ java {
 
 application {
     mainClass.set("MainKt")
+    val passThroughProps = setOf("excludeIds", "daysRange")
+    applicationDefaultJvmArgs = properties.asSequence()
+        .filter { it.key in passThroughProps }
+        .map { "-D${it.key}=${it.value}" }
+        .toList()
 }
