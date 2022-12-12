@@ -1,0 +1,8 @@
+.gradle
+.idea
+build
+json
+node_modules
+out
+cookies.json
+package-lock.json
