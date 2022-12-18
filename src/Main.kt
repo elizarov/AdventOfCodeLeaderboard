@@ -3,7 +3,6 @@ import kotlinx.serialization.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import java.io.*
-import kotlin.streams.toList
 
 // ------------- Global parameters -------------
 
@@ -21,13 +20,6 @@ val excludeIds = System.getProperty("excludeIds")
 val daysRange = System.getProperty("daysRange")
     ?.split("..")?.map { it.toInt() }?.let { it[0]..(it.getOrNull(1) ?: it[0]) }
     ?: 1..25
-
-// ------------- Formatting -------------
-
-const val placeLen = 3
-const val scoreLen = 5
-const val nameLen = 20
-const val gapLen = 4
 
 // ------------- Retrieve scoreboard files -------------
 
@@ -119,9 +111,35 @@ fun main() {
             }
         }
     }
+    // A small utility
+    fun Long.gap(d: Int, l: Int): Long? {
+        val bt = best[d]?.get(l) ?: return null
+        return this - bt
+    }
+    // Compute formatting
+    var placeLen = 0
+    var nameLen = 0
+    var scoreLen = 0
+    var gapLen = 0
+    for ((index, m) in members.values.withIndex()) {
+        val place = (index + 1).toString()
+        placeLen = maxOf(placeLen, place.length)
+        val name = m.cleanName()
+        nameLen = maxOf(nameLen, name.length)
+        val localScore = m.localScore.toString()
+        val globalScore = m.globalScore.toString()
+        scoreLen = maxOf(scoreLen, localScore.length, globalScore.length)
+        for (d in daysRange) {
+            for (l in 1..2) {
+                val c = m.completion(d, l) ?: continue
+                val gap = c.starTs.gap(d, l)?.fmtGap(0) ?: continue
+                gapLen = maxOf(gapLen, gap.length)
+            }
+        }
+    }
     // Output overall table
     fun header(title: String = "", dayBlock: (Int) -> Unit) {
-        print(title.padStart(placeLen + scoreLen + nameLen + scoreLen + 4))
+        print(title.padStart(placeLen + scoreLen + nameLen + scoreLen + 5))
         for (d in daysRange) dayBlock(d)
         println()
     }
@@ -147,14 +165,10 @@ fun main() {
         print("-".repeat(1 + 2 * (placeLen + gapLen)))
         print(" ")
     }
-    fun Long.gap(d: Int, l: Int): Long? {
-        val bt = best[d]?.get(l) ?: return null
-        return this - bt
-    }
     for ((index, m) in members.values.sortedByDescending { it.localScore }.withIndex()) {
         print((index + 1).toString().padStart(placeLen))
         print(")")
-        print(m.localScore.toString().padStart(scoreLen))
+        print(m.localScore.toString().padStart(scoreLen + 1))
         print(" ")
         print(m.cleanName().padEnd(nameLen))
         if (m.globalScore == 0) {
@@ -173,7 +187,7 @@ fun main() {
                     printStyled(ps, c.place.toString().padStart(placeLen))
                     val gap = c.starTs.gap(d, l)
                     val gs = if (gap != null && gap <= 60) Style.BOLD_CYAN else Style.DIM_GRAY
-                    printStyled(gs, gap.fmtGap())
+                    printStyled(gs, gap.fmtGap(gapLen))
                 }
             }
             print(" ")
@@ -184,26 +198,28 @@ fun main() {
 
 // ------------- Utilities -------------
 
-fun Member.cleanName(): String = buildString {
+fun Member.cleanName(): String {
     val s = name ?: return "(anonymous #$id)"
-    for (x in s.codePoints()) {
-        when (x) {
-            // NEGATIVE SQUARED LATIN CAPITAL LETTER
-            in 0x1F170..0x1F189 -> appendCodePoint(x - 0x1F170 + 'A'.code)
-            // ZWJ and EMOJIS
-            0x200D -> {}
-            in 0x2190..0x21FF,
-            in 0x2600..0x27BF,
-            in 0x3000..0x303F,
-            in 0x1F300..0x1F64F,
-            in 0x1F680..0x1F6FF -> {}
-            // everything else goes in verbatim
-            else -> appendCodePoint(x)
+    return buildString {
+        for (x in s.codePoints()) {
+            when (x) {
+                // NEGATIVE SQUARED LATIN CAPITAL LETTER
+                in 0x1F170..0x1F189 -> appendCodePoint(x - 0x1F170 + 'A'.code)
+                // ZWJ and EMOJIS
+                0x200D -> {}
+                in 0x2190..0x21FF,
+                in 0x2600..0x27BF,
+                in 0x3000..0x303F,
+                in 0x1F300..0x1F64F,
+                in 0x1F680..0x1F6FF -> {}
+                // everything else goes in verbatim
+                else -> appendCodePoint(x)
+            }
         }
-    }
+    }.trim()
 }
 
-fun Long?.fmtGap(): String {
+fun Long?.fmtGap(gapLen: Int): String {
     var dt = this ?: return " ".repeat(gapLen)
     if (dt <= 0) return "*".repeat(gapLen)
     if (dt <= 59) return "+${dt.toString().padStart(2, '0')}s"
