@@ -3,6 +3,7 @@ import kotlinx.serialization.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import java.io.*
+import kotlin.streams.toList
 
 // ------------- Global parameters -------------
 
@@ -83,7 +84,7 @@ data class Completion(
 
 data class MemberCompletion(val m: Member, val c: Completion)
 
-// ------------- Code -------------
+// ------------- Main code -------------
 
 fun main() {
     // Collect all non-empty members from leaderboards
@@ -181,12 +182,22 @@ fun main() {
     }
 }
 
+// ------------- Utilities -------------
+
 fun Member.cleanName(): String = buildString {
     val s = name ?: return "(anonymous #$id)"
     for (x in s.codePoints()) {
         when (x) {
             // NEGATIVE SQUARED LATIN CAPITAL LETTER
             in 0x1F170..0x1F189 -> appendCodePoint(x - 0x1F170 + 'A'.code)
+            // ZWJ and EMOJIS
+            0x200D -> {}
+            in 0x2190..0x21FF,
+            in 0x2600..0x27BF,
+            in 0x3000..0x303F,
+            in 0x1F300..0x1F64F,
+            in 0x1F680..0x1F6FF -> {}
+            // everything else goes in verbatim
             else -> appendCodePoint(x)
         }
     }
