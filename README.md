@@ -17,3 +17,4 @@
 `gradlew run`
 * Add `-PexcludeIds=<comma-separated-list>` to ignore some leaderboards.
 * Add `-PdaysRange=<day>|<day1>..<day2>` to specify a range of days to show (defaults to 1..25).
+* Add `-PonlyMembers=<name>(,<name>)+`to analyze only specific members. 

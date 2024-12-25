@@ -21,6 +21,10 @@ val daysRange = System.getProperty("daysRange")
     ?.split("..")?.map { it.toInt() }?.let { it[0]..(it.getOrNull(1) ?: it[0]) }
     ?: 1..25
 
+val onlyMembers = System.getProperty("onlyMembers")
+    ?.split(',')?.toSet()
+    ?: emptySet()
+
 // ------------- Retrieve scoreboard files -------------
 
 val filePrefix = JSON_FILES_MASK.substringAfterLast("/").substringBeforeLast("*")
@@ -87,6 +91,9 @@ fun main() {
         val text = file.readText()
         val leaderboard = Json.decodeFromString<Leaderboard>(text)
         members += leaderboard.members.filterValues { it.completionDayLevel.isNotEmpty() }
+    }
+    if (onlyMembers.isNotEmpty()) {
+        members.values.removeAll { it.cleanName() !in onlyMembers }
     }
     // Recompute scores
     for (member in members.values) {
