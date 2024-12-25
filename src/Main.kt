@@ -6,8 +6,8 @@ import java.io.*
 
 // ------------- Global parameters -------------
 
-const val AOC_YEAR = 2022
-const val JSON_FILES_MASK = "json/*.json"
+const val AOC_YEAR = 2024
+const val JSON_FILES_MASK = "json/${AOC_YEAR}/*.json"
 
 val AOC_TZ = TimeZone.of("America/New_York")
 
@@ -45,6 +45,8 @@ data class Leaderboard(
     @SerialName("owner_id")
     val ownerId: Long,
     val event: String,
+    @SerialName("day1_ts")
+    val day1ts: Long
 )
 
 @Serializable

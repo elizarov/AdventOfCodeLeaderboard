@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 
-const year = "2022"
+const year = "2024"
 const siteRoot = "https://adventofcode.com"
 const leaderboardsPage = siteRoot + "/" + year + "/leaderboard/private"
 const jsonDir = "json"
@@ -33,7 +33,7 @@ const run = async () => {
     }
     for (const i in urls) {
         const url = urls[i];
-        const file = jsonDir + url.substring(url.lastIndexOf('/'));
+        const file = jsonDir +'/' + year + url.substring(url.lastIndexOf('/'));
         console.log(`Saving leaderboard ${url} -> ${file}`);
         await page.goto(siteRoot + url);
         const content = await page.innerText('pre');
